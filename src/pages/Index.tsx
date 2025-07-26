@@ -5,6 +5,7 @@ import { MasterData } from "@/components/MasterData";
 import { NetworkAnalysis } from "@/components/NetworkAnalysis";
 import { CreateBid } from "@/components/CreateBid";
 import { BidAnalysis } from "@/components/BidAnalysis";
+import { InsuranceClaims } from "@/components/InsuranceClaims";
 
 const Index = () => {
   const [currentPage, setCurrentPage] = useState("dashboard");
@@ -27,6 +28,8 @@ const Index = () => {
         return <BidAnalysis />;
       case "bid-awards":
         return <div className="text-center py-12"><h2 className="text-2xl font-bold">Bid Awards Module</h2><p className="text-muted-foreground mt-2">Coming soon...</p></div>;
+      case "insurance-claims":
+        return <InsuranceClaims />;
       default:
         return <Dashboard onNavigate={setCurrentPage} />;
     }

@@ -10,7 +10,8 @@ import {
   Users,
   Presentation,
   BarChart3,
-  Award
+  Award,
+  Shield
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +30,7 @@ const navigationItems = [
   { id: "manage-bids", label: "Manage Bids", icon: Presentation },
   { id: "bid-analysis", label: "Bid Analysis", icon: BarChart3 },
   { id: "bid-awards", label: "Bid Awards", icon: Award },
+  { id: "insurance-claims", label: "Insurance Claims", icon: Shield },
 ];
 
 export function Layout({ children, currentPage = "dashboard", onNavigate }: LayoutProps) {
