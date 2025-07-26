@@ -6,6 +6,7 @@ import { NetworkAnalysis } from "@/components/NetworkAnalysis";
 import { CreateBid } from "@/components/CreateBid";
 import { BidAnalysis } from "@/components/BidAnalysis";
 import { InsuranceClaims } from "@/components/InsuranceClaims";
+import { InviteCarriers } from "@/components/InviteCarriers";
 
 const Index = () => {
   const [currentPage, setCurrentPage] = useState("dashboard");
@@ -21,7 +22,7 @@ const Index = () => {
       case "create-bid":
         return <CreateBid />;
       case "invite-carriers":
-        return <div className="text-center py-12"><h2 className="text-2xl font-bold">Invite Carriers Module</h2><p className="text-muted-foreground mt-2">Coming soon...</p></div>;
+        return <InviteCarriers />;
       case "manage-bids":
         return <div className="text-center py-12"><h2 className="text-2xl font-bold">Manage Bids Module</h2><p className="text-muted-foreground mt-2">Coming soon...</p></div>;
       case "bid-analysis":
