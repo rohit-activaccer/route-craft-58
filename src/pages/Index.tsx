@@ -8,6 +8,7 @@ import { BidAnalysis } from "@/components/BidAnalysis";
 import { InsuranceClaims } from "@/components/InsuranceClaims";
 import { InviteCarriers } from "@/components/InviteCarriers";
 import ManageBids from "@/components/ManageBids";
+import BidAwards from "@/components/BidAwards";
 
 const Index = () => {
   const [currentPage, setCurrentPage] = useState("dashboard");
@@ -29,7 +30,7 @@ const Index = () => {
       case "bid-analysis":
         return <BidAnalysis />;
       case "bid-awards":
-        return <div className="text-center py-12"><h2 className="text-2xl font-bold">Bid Awards Module</h2><p className="text-muted-foreground mt-2">Coming soon...</p></div>;
+        return <BidAwards />;
       case "insurance-claims":
         return <InsuranceClaims />;
       default:
