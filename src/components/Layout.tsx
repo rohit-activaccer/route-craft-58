@@ -48,7 +48,7 @@ export function Layout({ children, currentPage = "dashboard", onNavigate }: Layo
           <Truck className="w-6 h-6 text-primary-foreground" />
         </div>
         <div>
-          <h1 className="text-lg font-semibold text-foreground">TransPro</h1>
+          <h1 className="text-lg font-semibold text-foreground">Activaccer</h1>
           <p className="text-sm text-muted-foreground">Transportation Procurement</p>
         </div>
       </div>
@@ -95,7 +95,7 @@ export function Layout({ children, currentPage = "dashboard", onNavigate }: Layo
             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary-glow">
               <Truck className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="text-lg font-semibold text-foreground">TransPro</span>
+            <span className="text-lg font-semibold text-foreground">Activaccer</span>
           </div>
           
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
