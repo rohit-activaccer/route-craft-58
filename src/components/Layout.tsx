@@ -11,9 +11,11 @@ import {
   Presentation,
   BarChart3,
   Award,
-  Shield
+  Shield,
+  LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -35,6 +37,7 @@ const navigationItems = [
 
 export function Layout({ children, currentPage = "dashboard", onNavigate }: LayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { signOut, user } = useAuth();
 
   const handleNavigation = (page: string) => {
     onNavigate?.(page);
@@ -78,6 +81,31 @@ export function Layout({ children, currentPage = "dashboard", onNavigate }: Layo
           })}
         </div>
       </nav>
+      
+      {/* User Info and Logout */}
+      <div className="p-4 border-t border-border">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+            <span className="text-sm font-medium text-primary-foreground">
+              {user?.email?.charAt(0).toUpperCase()}
+            </span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-foreground truncate">
+              {user?.email}
+            </p>
+            <p className="text-xs text-muted-foreground">Administrator</p>
+          </div>
+        </div>
+        <Button
+          variant="ghost"
+          className="w-full justify-start gap-3 h-10 text-muted-foreground hover:text-foreground hover:bg-secondary"
+          onClick={signOut}
+        >
+          <LogOut className="w-4 h-4" />
+          Sign Out
+        </Button>
+      </div>
     </>
   );
 
