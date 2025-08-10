@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,79 +10,44 @@ import {
   Activity,
   MapPin,
   DollarSign,
-  Clock
+  Clock,
+  RefreshCw,
+  AlertCircle
 } from "lucide-react";
+import { useDashboardOverview, useRecentActivity } from "@/hooks/useDashboard";
+import { transformDashboardData, transformRecentActivities, getStatusVariant } from "@/lib/dashboard-utils";
 
 interface DashboardProps {
   onNavigate?: (page: string) => void;
 }
 
 export function Dashboard({ onNavigate }: DashboardProps) {
-  const stats = [
-    {
-      title: "Active Bids",
-      value: "12",
-      change: "+3 this week",
-      icon: FileText,
-      color: "text-blue-accent"
-    },
-    {
-      title: "Registered Carriers",
-      value: "847",
-      change: "+28 this month",
-      icon: Truck,
-      color: "text-primary"
-    },
-    {
-      title: "Total Lanes",
-      value: "1,264",
-      change: "+45 active",
-      icon: MapPin,
-      color: "text-navy"
-    },
-    {
-      title: "Cost Savings",
-      value: "$2.4M",
-      change: "vs last quarter",
-      icon: DollarSign,
-      color: "text-green-600"
-    }
-  ];
+  const [refreshKey, setRefreshKey] = useState(0);
+  
+  // Fetch dashboard data
+  const { 
+    data: overviewData, 
+    isLoading: overviewLoading, 
+    error: overviewError,
+    refetch: refetchOverview 
+  } = useDashboardOverview();
+  
+  const { 
+    data: activityData, 
+    isLoading: activityLoading, 
+    error: activityError,
+    refetch: refetchActivity 
+  } = useRecentActivity(10);
 
-  const recentActivities = [
-    {
-      id: 1,
-      type: "bid_created",
-      title: "Q1 2024 Regional Lanes Bid",
-      description: "Created bid for 156 lanes covering Midwest region",
-      time: "2 hours ago",
-      status: "active"
-    },
-    {
-      id: 2,
-      type: "carrier_invited",
-      title: "Carrier Invitations Sent",
-      description: "45 carriers invited to Southeast TL bid",
-      time: "4 hours ago",
-      status: "pending"
-    },
-    {
-      id: 3,
-      type: "bid_analysis",
-      title: "Bid Analysis Completed",
-      description: "West Coast contract rates analysis finalized",
-      time: "1 day ago",
-      status: "completed"
-    },
-    {
-      id: 4,
-      type: "award_issued",
-      title: "Contract Awards Issued",
-      description: "23 carriers awarded contracts for Eastern region",
-      time: "2 days ago",
-      status: "completed"
-    }
-  ];
+  // Transform data for display
+  const stats = overviewData?.overview ? transformDashboardData(overviewData.overview) : [];
+  const recentActivities = activityData?.activities ? transformRecentActivities(activityData.activities) : [];
+
+  const handleRefresh = () => {
+    setRefreshKey(prev => prev + 1);
+    refetchOverview();
+    refetchActivity();
+  };
 
   const quickActions = [
     {
@@ -114,6 +80,113 @@ export function Dashboard({ onNavigate }: DashboardProps) {
     }
   ];
 
+  const renderStats = () => {
+    if (overviewLoading) {
+      return Array.from({ length: 4 }).map((_, index) => (
+        <Card key={index} className="shadow-card">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-5 w-5 bg-gray-200 rounded animate-pulse"></div>
+          </CardHeader>
+          <CardContent>
+            <div className="h-8 w-16 bg-gray-200 rounded animate-pulse mb-2"></div>
+            <div className="h-3 w-24 bg-gray-200 rounded animate-pulse"></div>
+          </CardContent>
+        </Card>
+      ));
+    }
+
+    if (overviewError) {
+      return (
+        <Card className="col-span-full">
+          <CardContent className="flex items-center justify-center p-8">
+            <div className="text-center">
+              <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+              <p className="text-red-600">Failed to load dashboard data</p>
+              <Button onClick={handleRefresh} variant="outline" className="mt-2">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Retry
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    return stats.map((stat, index) => (
+      <Card key={index} className="shadow-card hover:shadow-hover transition-shadow duration-200">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">
+            {stat.title}
+          </CardTitle>
+          <span className="text-2xl">{stat.icon}</span>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-foreground">{stat.value}</div>
+          <p className="text-xs text-muted-foreground mt-1">{stat.change}</p>
+        </CardContent>
+      </Card>
+    ));
+  };
+
+  const renderRecentActivities = () => {
+    if (activityLoading) {
+      return Array.from({ length: 4 }).map((_, index) => (
+        <div key={index} className="flex items-start gap-4 p-4 rounded-lg bg-secondary/30">
+          <div className="h-10 w-10 bg-gray-200 rounded-lg animate-pulse"></div>
+          <div className="flex-1 space-y-2">
+            <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-3 w-48 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-3 w-20 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+        </div>
+      ));
+    }
+
+    if (activityError) {
+      return (
+        <div className="text-center p-8">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <p className="text-red-600">Failed to load recent activities</p>
+          <Button onClick={handleRefresh} variant="outline" className="mt-2">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Retry
+          </Button>
+        </div>
+      );
+    }
+
+    if (!recentActivities.length) {
+      return (
+        <div className="text-center p-8 text-muted-foreground">
+          <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
+          <p>No recent activities</p>
+        </div>
+      );
+    }
+
+    return recentActivities.map((activity) => (
+      <div key={activity.id} className="flex items-start gap-4 p-4 rounded-lg bg-secondary/30">
+        <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary">
+          <span className="text-lg">{activity.icon}</span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <h4 className="text-sm font-medium text-foreground">{activity.title}</h4>
+            <Badge 
+              variant={getStatusVariant(activity.status)}
+              className="text-xs"
+            >
+              {activity.status}
+            </Badge>
+          </div>
+          <p className="text-sm text-muted-foreground mb-2">{activity.description}</p>
+          <p className="text-xs text-muted-foreground">{activity.time}</p>
+        </div>
+      </div>
+    ));
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -122,34 +195,29 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           <h1 className="text-3xl font-bold text-foreground">Transportation Procurement Dashboard</h1>
           <p className="text-muted-foreground">Monitor your procurement activities and performance metrics</p>
         </div>
-        <Button 
-          onClick={() => onNavigate?.("create-bid")}
-          className="bg-gradient-to-r from-primary to-primary-glow hover:shadow-lg transition-all duration-200"
-        >
-          <FileText className="w-4 h-4 mr-2" />
-          Create New Bid
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleRefresh}
+            variant="outline"
+            size="sm"
+            disabled={overviewLoading || activityLoading}
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${(overviewLoading || activityLoading) ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button 
+            onClick={() => onNavigate?.("create-bid")}
+            className="bg-gradient-to-r from-primary to-primary-glow hover:shadow-lg transition-all duration-200"
+          >
+            <FileText className="w-4 h-4 mr-2" />
+            Create New Bid
+          </Button>
+        </div>
       </div>
 
       {/* Stats Grid */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <Card key={index} className="shadow-card hover:shadow-hover transition-shadow duration-200">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {stat.title}
-                </CardTitle>
-                <Icon className={`w-5 h-5 ${stat.color}`} />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-foreground">{stat.value}</div>
-                <p className="text-xs text-muted-foreground mt-1">{stat.change}</p>
-              </CardContent>
-            </Card>
-          );
-        })}
+        {renderStats()}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -192,26 +260,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {recentActivities.map((activity) => (
-                  <div key={activity.id} className="flex items-start gap-4 p-4 rounded-lg bg-secondary/30">
-                    <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary">
-                      <Clock className="w-5 h-5 text-primary-foreground" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="text-sm font-medium text-foreground">{activity.title}</h4>
-                        <Badge 
-                          variant={activity.status === "completed" ? "default" : "secondary"}
-                          className="text-xs"
-                        >
-                          {activity.status}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-2">{activity.description}</p>
-                      <p className="text-xs text-muted-foreground">{activity.time}</p>
-                    </div>
-                  </div>
-                ))}
+                {renderRecentActivities()}
               </div>
             </CardContent>
           </Card>

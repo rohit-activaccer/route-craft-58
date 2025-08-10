@@ -1,11 +1,16 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
+
+interface User {
+  id: string;
+  email: string;
+  name?: string;
+}
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -15,33 +20,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-      setLoading(false);
+    // For development, create a default user
+    const defaultUser: User = {
+      id: '1',
+      email: 'admin@routecraft.com',
+      name: 'Administrator'
     };
-
-    getInitialSession();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    );
-
-    return () => subscription.unsubscribe();
+    
+    // Simulate loading delay
+    setTimeout(() => {
+      setUser(defaultUser);
+      setLoading(false);
+    }, 1000);
   }, []);
 
+  const signIn = async (email: string, password: string) => {
+    // For development, accept any credentials
+    const user: User = {
+      id: '1',
+      email: email,
+      name: 'Administrator'
+    };
+    setUser(user);
+  };
+
   const signOut = async () => {
-    await supabase.auth.signOut();
+    setUser(null);
   };
 
   const value = {
     user,
     loading,
+    signIn,
     signOut,
   };
 

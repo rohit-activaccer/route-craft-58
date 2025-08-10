@@ -33,6 +33,7 @@ const navigationItems = [
   { id: "bid-analysis", label: "Bid Analysis", icon: BarChart3 },
   { id: "bid-awards", label: "Bid Awards", icon: Award },
   { id: "insurance-claims", label: "Insurance Claims", icon: Shield },
+  { id: "data-test", label: "Data Test", icon: Database },
 ];
 
 export function Layout({ children, currentPage = "dashboard", onNavigate }: LayoutProps) {

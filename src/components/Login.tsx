@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Truck, Eye, EyeOff } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
 interface LoginProps {
@@ -19,32 +19,19 @@ export function Login({ onLogin }: LoginProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const { toast } = useToast();
+  const { signIn } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
-
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      await signIn(email, password); // Using the new signIn from AuthContext
+      toast({
+        title: "Login Successful",
+        description: "Welcome to Activaccer!",
       });
-
-      if (error) {
-        setError(error.message);
-        toast({
-          title: "Login Failed",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else if (data.user) {
-        toast({
-          title: "Login Successful",
-          description: "Welcome to Activaccer!",
-        });
-        onLogin();
-      }
+      onLogin();
     } catch (err) {
       setError("An unexpected error occurred");
       toast({

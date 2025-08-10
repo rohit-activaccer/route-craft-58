@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { apiService } from "@/lib/api";
 import { 
   FileText, 
   Plus, 
@@ -22,7 +23,16 @@ import {
 
 export function CreateBid() {
   const [bidName, setBidName] = useState("");
+  const [bidDescription, setBidDescription] = useState("");
+  const [bidType, setBidType] = useState("");
+  const [priority, setPriority] = useState("medium");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [submissionDeadline, setSubmissionDeadline] = useState("");
+  const [budget, setBudget] = useState("");
+  const [currency, setCurrency] = useState("INR");
   const [selectedLanes, setSelectedLanes] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const availableLanes = [
     { id: "1", origin: "Chicago, IL", destination: "Atlanta, GA", volume: "1,247 loads", distance: "467 miles" },
@@ -46,6 +56,47 @@ export function CreateBid() {
     );
   };
 
+  const handlePublishBid = async () => {
+    // Validate required fields
+    if (!bidName || !bidType || !startDate || !endDate || !submissionDeadline || selectedLanes.length === 0) {
+      alert("Please fill in all required fields and select at least one lane.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // Convert date strings to ISO format and budget to number
+      const formatDate = (dateStr: string) => {
+        if (!dateStr) return null;
+        const date = new Date(dateStr);
+        return date.toISOString();
+      };
+
+      const bidData = {
+        name: bidName,
+        description: bidDescription,
+        bid_type: bidType,
+        priority: priority,
+        start_date: formatDate(startDate),
+        end_date: formatDate(endDate),
+        submission_deadline: formatDate(submissionDeadline),
+        budget: budget ? parseFloat(budget) : null,
+        currency: currency,
+        lane_ids: selectedLanes
+      };
+
+      console.log("Submitting bid data:", bidData); // Debug log
+      await apiService.createBid(bidData);
+      alert("Bid published successfully!");
+      // Redirect or update UI on successful publish
+    } catch (error) {
+      console.error("Error publishing bid:", error);
+      alert("Failed to publish bid. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -59,9 +110,19 @@ export function CreateBid() {
             <Save className="w-4 h-4" />
             Save Draft
           </Button>
-          <Button className="gap-2 bg-gradient-to-r from-primary to-primary-glow">
-            <Send className="w-4 h-4" />
-            Publish Bid
+          <Button 
+            className="gap-2 bg-gradient-to-r from-primary to-primary-glow"
+            onClick={handlePublishBid}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              "Publishing..."
+            ) : (
+              <>
+                <Send className="w-4 h-4" />
+                Publish Bid
+              </>
+            )}
           </Button>
         </div>
       </div>
@@ -91,7 +152,7 @@ export function CreateBid() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="bidType">Bid Type</Label>
-                  <Select>
+                  <Select value={bidType} onValueChange={setBidType}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select bid type" />
                     </SelectTrigger>
@@ -99,8 +160,33 @@ export function CreateBid() {
                       <SelectItem value="contract">Contract Bid</SelectItem>
                       <SelectItem value="spot">Spot Market</SelectItem>
                       <SelectItem value="seasonal">Seasonal Contract</SelectItem>
+                      <SelectItem value="regional">Regional Contract</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="priority">Priority</Label>
+                  <Select value={priority} onValueChange={setPriority}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="urgent">Urgent</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="budget">Budget (₹)</Label>
+                  <Input 
+                    id="budget" 
+                    type="number"
+                    placeholder="5000000"
+                    value={budget}
+                    onChange={(e) => setBudget(e.target.value)}
+                  />
                 </div>
               </div>
 
@@ -109,6 +195,8 @@ export function CreateBid() {
                 <Textarea 
                   id="description" 
                   placeholder="Describe the scope and requirements of this bid..."
+                  value={bidDescription}
+                  onChange={(e) => setBidDescription(e.target.value)}
                   className="min-h-[100px]"
                 />
               </div>
@@ -116,25 +204,15 @@ export function CreateBid() {
               <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
                 <div className="space-y-2">
                   <Label htmlFor="startDate">Bid Start Date</Label>
-                  <Input type="date" id="startDate" />
+                  <Input type="date" id="startDate" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="endDate">Bid End Date</Label>
-                  <Input type="date" id="endDate" />
+                  <Input type="date" id="endDate" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="timezone">Timezone</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select timezone" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="est">Eastern (EST)</SelectItem>
-                      <SelectItem value="cst">Central (CST)</SelectItem>
-                      <SelectItem value="mst">Mountain (MST)</SelectItem>
-                      <SelectItem value="pst">Pacific (PST)</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="submissionDeadline">Submission Deadline</Label>
+                  <Input type="datetime-local" id="submissionDeadline" value={submissionDeadline} onChange={(e) => setSubmissionDeadline(e.target.value)} />
                 </div>
               </div>
             </CardContent>

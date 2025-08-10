@@ -9,6 +9,7 @@ import { InsuranceClaims } from "@/components/InsuranceClaims";
 import { InviteCarriers } from "@/components/InviteCarriers";
 import ManageBids from "@/components/ManageBids";
 import BidAwards from "@/components/BidAwards";
+import { DataTest } from "@/components/DataTest";
 import { Login } from "@/components/Login";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -51,6 +52,8 @@ const Index = () => {
         return <BidAwards />;
       case "insurance-claims":
         return <InsuranceClaims />;
+      case "data-test":
+        return <DataTest />;
       default:
         return <Dashboard onNavigate={setCurrentPage} />;
     }
