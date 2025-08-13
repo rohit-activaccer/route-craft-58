@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { VoiceBidCreator } from "./VoiceBidCreator";
 import { apiService } from "@/lib/api";
 import { 
   FileText, 
@@ -18,7 +20,9 @@ import {
   DollarSign,
   Clock,
   Save,
-  Send
+  Send,
+  Mic,
+  Edit3
 } from "lucide-react";
 
 export function CreateBid() {
@@ -33,6 +37,7 @@ export function CreateBid() {
   const [currency, setCurrency] = useState("INR");
   const [selectedLanes, setSelectedLanes] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState("form");
 
   const availableLanes = [
     { id: "1", origin: "Chicago, IL", destination: "Atlanta, GA", volume: "1,247 loads", distance: "467 miles" },
@@ -54,6 +59,30 @@ export function CreateBid() {
         ? prev.filter(id => id !== laneId)
         : [...prev, laneId]
     );
+  };
+
+  const handleVoiceBidCreated = (voiceBidData: any) => {
+    console.log("Voice bid data received:", voiceBidData);
+    
+    // Populate form fields with voice data
+    if (voiceBidData.name) setBidName(voiceBidData.name);
+    if (voiceBidData.description) setBidDescription(voiceBidData.description);
+    if (voiceBidData.bid_type) setBidType(voiceBidData.bid_type);
+    if (voiceBidData.priority) setPriority(voiceBidData.priority);
+    if (voiceBidData.budget) setBudget(voiceBidData.budget.toString());
+    if (voiceBidData.start_date) setStartDate(voiceBidData.start_date.split('T')[0]);
+    if (voiceBidData.end_date) setEndDate(voiceBidData.end_date.split('T')[0]);
+    if (voiceBidData.submission_deadline) {
+      // Convert ISO datetime to datetime-local format
+      const date = new Date(voiceBidData.submission_deadline);
+      const localDateTime = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 16);
+      setSubmissionDeadline(localDateTime);
+    }
+    
+    // Switch to form tab to show populated data
+    setActiveTab("form");
   };
 
   const handlePublishBid = async () => {
@@ -126,6 +155,21 @@ export function CreateBid() {
           </Button>
         </div>
       </div>
+
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 max-w-md">
+          <TabsTrigger value="form" className="gap-2">
+            <Edit3 className="w-4 h-4" />
+            Form
+          </TabsTrigger>
+          <TabsTrigger value="voice" className="gap-2">
+            <Mic className="w-4 h-4" />
+            Voice
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="form" className="space-y-6 mt-6">
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Bid Configuration */}
@@ -415,6 +459,12 @@ export function CreateBid() {
           </Card>
         </div>
       </div>
+        </TabsContent>
+
+        <TabsContent value="voice" className="space-y-6 mt-6">
+          <VoiceBidCreator onBidCreated={handleVoiceBidCreated} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
