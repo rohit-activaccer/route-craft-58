@@ -183,9 +183,8 @@ export class RealtimeChat {
       this.audioContext = new AudioContext({ sampleRate: 24000 });
       this.audioQueue = new AudioQueue(this.audioContext);
 
-      // Get current location for WebSocket URL
-      const projectId = window.location.hostname.split('.')[0];
-      const wsUrl = `wss://${projectId}.functions.supabase.co/realtime-chat`;
+      // Connect to the Supabase edge function WebSocket
+      const wsUrl = `wss://ublkhfbpkffpunrjqcto.functions.supabase.co/realtime-chat`;
       
       console.log('Connecting to:', wsUrl);
       
