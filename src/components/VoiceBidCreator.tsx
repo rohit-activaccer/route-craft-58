@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
+import { BidWorkflowGraph } from "@/components/BidWorkflowGraph";
 import Vapi from "@vapi-ai/web";
 import { 
   Mic, 
@@ -37,6 +38,9 @@ export function VoiceBidCreator({ onBidCreated }: VoiceBidCreatorProps) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [transcript, setTranscript] = useState("");
+  const [currentStep, setCurrentStep] = useState(0);
+  const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const [isProcessingBid, setIsProcessingBid] = useState(false);
   const vapiRef = useRef<Vapi | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -46,6 +50,83 @@ export function VoiceBidCreator({ onBidCreated }: VoiceBidCreatorProps) {
 
   useEffect(() => {
     scrollToBottom();
+  }, [messages]);
+
+  // Analyze messages to determine workflow progress
+  const analyzeWorkflowProgress = (messages: Message[]) => {
+    let step = 0;
+    const completed: number[] = [];
+    
+    const conversationText = messages
+      .filter(m => m.role === 'user' || m.role === 'assistant')
+      .map(m => m.content?.toLowerCase() || '')
+      .join(' ');
+
+    // Step 1: Bid Information
+    if (conversationText.includes('bid') || conversationText.includes('transportation') || conversationText.includes('proposal')) {
+      step = Math.max(step, 1);
+      if (conversationText.includes('type') || conversationText.includes('freight') || conversationText.includes('cargo')) {
+        completed.push(1);
+      }
+    }
+
+    // Step 2: Route Details
+    if (conversationText.includes('origin') || conversationText.includes('destination') || 
+        conversationText.includes('from') || conversationText.includes('to') ||
+        conversationText.includes('location') || conversationText.includes('address')) {
+      step = Math.max(step, 2);
+      if (conversationText.includes('miles') || conversationText.includes('distance') || 
+          conversationText.includes('route')) {
+        completed.push(2);
+      }
+    }
+
+    // Step 3: Transportation
+    if (conversationText.includes('truck') || conversationText.includes('vehicle') ||
+        conversationText.includes('equipment') || conversationText.includes('trailer') ||
+        conversationText.includes('capacity')) {
+      step = Math.max(step, 3);
+      if (conversationText.includes('tons') || conversationText.includes('weight') ||
+          conversationText.includes('size')) {
+        completed.push(3);
+      }
+    }
+
+    // Step 4: Timeline
+    if (conversationText.includes('deadline') || conversationText.includes('schedule') ||
+        conversationText.includes('date') || conversationText.includes('time') ||
+        conversationText.includes('delivery')) {
+      step = Math.max(step, 4);
+      if (conversationText.includes('urgent') || conversationText.includes('asap') ||
+          conversationText.includes('flexible')) {
+        completed.push(4);
+      }
+    }
+
+    // Step 5: Budget
+    if (conversationText.includes('budget') || conversationText.includes('price') ||
+        conversationText.includes('cost') || conversationText.includes('$') ||
+        conversationText.includes('dollar')) {
+      step = Math.max(step, 5);
+      if (conversationText.includes('maximum') || conversationText.includes('limit') ||
+          conversationText.includes('range')) {
+        completed.push(5);
+      }
+    }
+
+    // Step 6: Submit
+    if (conversationText.includes('submit') || conversationText.includes('publish') ||
+        conversationText.includes('create bid') || conversationText.includes('ready')) {
+      step = Math.max(step, 6);
+    }
+
+    return { step, completed };
+  };
+
+  useEffect(() => {
+    const { step, completed } = analyzeWorkflowProgress(messages);
+    setCurrentStep(step);
+    setCompletedSteps(completed);
   }, [messages]);
 
   const handleMessage = (message: Message) => {
@@ -173,17 +254,22 @@ export function VoiceBidCreator({ onBidCreated }: VoiceBidCreatorProps) {
           }
         } else if (message.type === 'function-call' && message.functionCall?.name === 'createBid') {
           const bidData = message.functionCall.parameters;
+          setIsProcessingBid(true);
           setMessages(prev => [...prev, {
             type: 'success',
             content: "Great! I've collected all the information needed for your bid. Let me create it for you now."
           }]);
           
-          onBidCreated(bidData);
-          
-          toast({
-            title: "Bid Created Successfully!",
-            description: "Your bid has been created from the voice conversation.",
-          });
+          // Simulate processing delay
+          setTimeout(() => {
+            setIsProcessingBid(false);
+            onBidCreated(bidData);
+            
+            toast({
+              title: "Bid Created Successfully!",
+              description: "Your bid has been created from the voice conversation.",
+            });
+          }, 2000);
         }
       });
 
@@ -310,6 +396,28 @@ export function VoiceBidCreator({ onBidCreated }: VoiceBidCreatorProps) {
           )}
         </CardContent>
       </Card>
+
+      {/* Workflow Progress */}
+      {(isConnected || messages.length > 0) && (
+        <Card className="shadow-card">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5" />
+              Bid Creation Progress
+            </CardTitle>
+            <CardDescription>
+              Track your bid creation journey through each step
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <BidWorkflowGraph 
+              currentStep={currentStep}
+              completedSteps={completedSteps}
+              isProcessing={isProcessingBid}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Conversation History */}
       {isConnected && (
