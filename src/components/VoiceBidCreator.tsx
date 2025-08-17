@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
-import { RealtimeChat } from "@/utils/RealtimeAudio";
+import Vapi from "@vapi-ai/web";
 import { 
   Mic, 
   MicOff, 
@@ -37,7 +37,7 @@ export function VoiceBidCreator({ onBidCreated }: VoiceBidCreatorProps) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [transcript, setTranscript] = useState("");
-  const chatRef = useRef<RealtimeChat | null>(null);
+  const vapiRef = useRef<Vapi | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -119,8 +119,92 @@ export function VoiceBidCreator({ onBidCreated }: VoiceBidCreatorProps) {
   const startConversation = async () => {
     try {
       setIsConnecting(true);
-      chatRef.current = new RealtimeChat(handleMessage, handleSpeakingChange);
-      await chatRef.current.init();
+      
+      // Initialize Vapi with the provided configuration
+      vapiRef.current = new Vapi("0096af4f-e4a8-4b57-a719-d47a30eb3244");
+      
+      // Set up event listeners
+      vapiRef.current.on('call-start', () => {
+        console.log('Call started');
+        setIsConnected(true);
+        setIsConnecting(false);
+        setMessages(prev => [...prev, {
+          type: 'system',
+          content: "Voice interface ready! I'm here to help you create a transportation bid. Tell me about what kind of bid you'd like to create."
+        }]);
+      });
+
+      vapiRef.current.on('call-end', () => {
+        console.log('Call ended');
+        setIsConnected(false);
+        setIsSpeaking(false);
+        setMessages(prev => [...prev, {
+          type: 'system',
+          content: "Voice interface disconnected"
+        }]);
+      });
+
+      vapiRef.current.on('speech-start', () => {
+        console.log('AI started speaking');
+        setIsSpeaking(true);
+      });
+
+      vapiRef.current.on('speech-end', () => {
+        console.log('AI stopped speaking');
+        setIsSpeaking(false);
+      });
+
+      vapiRef.current.on('message', (message: any) => {
+        console.log('Received message:', message);
+        
+        if (message.type === 'transcript') {
+          if (message.role === 'user') {
+            setMessages(prev => [...prev, {
+              type: 'transcript',
+              role: 'user',
+              content: message.transcript
+            }]);
+          } else if (message.role === 'assistant') {
+            setMessages(prev => [...prev, {
+              type: 'transcript',
+              role: 'assistant',
+              content: message.transcript
+            }]);
+          }
+        } else if (message.type === 'function-call' && message.functionCall?.name === 'createBid') {
+          const bidData = message.functionCall.parameters;
+          setMessages(prev => [...prev, {
+            type: 'success',
+            content: "Great! I've collected all the information needed for your bid. Let me create it for you now."
+          }]);
+          
+          onBidCreated(bidData);
+          
+          toast({
+            title: "Bid Created Successfully!",
+            description: "Your bid has been created from the voice conversation.",
+          });
+        }
+      });
+
+      vapiRef.current.on('error', (error: any) => {
+        console.error('Vapi error:', error);
+        setIsConnecting(false);
+        setMessages(prev => [...prev, {
+          type: 'error',
+          content: error.message || 'An error occurred'
+        }]);
+        
+        toast({
+          title: "Error",
+          description: error.message || 'An error occurred',
+          variant: "destructive",
+        });
+      });
+
+      // Start the call with the assistant
+      await vapiRef.current.start("dd2387c7-27fc-463e-a970-ecc977dd7fce");
+      
     } catch (error) {
       console.error('Error starting conversation:', error);
       setIsConnecting(false);
@@ -133,14 +217,14 @@ export function VoiceBidCreator({ onBidCreated }: VoiceBidCreatorProps) {
   };
 
   const endConversation = () => {
-    chatRef.current?.disconnect();
+    vapiRef.current?.stop();
     setIsConnected(false);
     setIsSpeaking(false);
   };
 
   useEffect(() => {
     return () => {
-      chatRef.current?.disconnect();
+      vapiRef.current?.stop();
     };
   }, []);
 
