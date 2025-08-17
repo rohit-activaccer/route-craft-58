@@ -397,86 +397,113 @@ export function VoiceBidCreator({ onBidCreated }: VoiceBidCreatorProps) {
         </CardContent>
       </Card>
 
-      {/* Workflow Progress */}
+      {/* Workflow and Chat Side by Side */}
       {(isConnected || messages.length > 0) && (
-        <Card className="shadow-card">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5" />
-              Bid Creation Progress
-            </CardTitle>
-            <CardDescription>
-              Track your bid creation journey through each step
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <BidWorkflowGraph 
-              currentStep={currentStep}
-              completedSteps={completedSteps}
-              isProcessing={isProcessingBid}
-            />
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-2 gap-6">
+          {/* Workflow Progress - Left Side */}
+          <Card className="shadow-card">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5" />
+                Bid Creation Progress
+              </CardTitle>
+              <CardDescription>
+                Track your bid creation journey through each step
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <BidWorkflowGraph 
+                currentStep={currentStep}
+                completedSteps={completedSteps}
+                isProcessing={isProcessingBid}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Conversation History - Right Side */}
+          <Card className="shadow-card">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="w-5 h-5" />
+                Voice Conversation
+              </CardTitle>
+              <CardDescription>
+                Chat history with your AI assistant
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-96 w-full pr-4">
+                <div className="space-y-4">
+                  {messages.map((message, index) => (
+                    <div key={index}>
+                      <div className={`p-3 rounded-lg border ${getMessageStyle(message)}`}>
+                        <div className="flex items-start gap-2">
+                          {getMessageIcon(message)}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium mb-1">
+                              {message.role === 'user' ? 'You' : 
+                               message.role === 'assistant' ? 'AI Assistant' : 
+                               message.type === 'success' ? 'Success' :
+                               message.type === 'error' ? 'Error' : 'System'}
+                            </div>
+                            <div className="text-sm text-foreground whitespace-pre-wrap">
+                              {message.content}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      {index < messages.length - 1 && <Separator className="my-2" />}
+                    </div>
+                  ))}
+                  
+                  {/* Current AI transcript (while speaking) */}
+                  {isSpeaking && transcript && (
+                    <div className="bg-secondary/10 border-secondary/20 p-3 rounded-lg border">
+                      <div className="flex items-start gap-2">
+                        <Bot className="w-4 h-4" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium mb-1 flex items-center gap-2">
+                            AI Assistant
+                            <Badge variant="secondary" className="gap-1">
+                              <Volume2 className="w-3 h-3" />
+                              Speaking
+                            </Badge>
+                          </div>
+                          <div className="text-sm text-foreground">
+                            {transcript}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div ref={messagesEndRef} />
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
-      {/* Conversation History */}
-      {isConnected && (
+      {/* Show chat only when connected but no workflow progress yet */}
+      {isConnected && messages.length === 0 && (
         <Card className="shadow-card">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2">
               <MessageSquare className="w-5 h-5" />
-              Conversation
+              Voice Conversation
             </CardTitle>
+            <CardDescription>
+              Start talking to begin creating your bid
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <ScrollArea className="h-96 w-full pr-4">
-              <div className="space-y-4">
-                {messages.map((message, index) => (
-                  <div key={index}>
-                    <div className={`p-3 rounded-lg border ${getMessageStyle(message)}`}>
-                      <div className="flex items-start gap-2">
-                        {getMessageIcon(message)}
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium mb-1">
-                            {message.role === 'user' ? 'You' : 
-                             message.role === 'assistant' ? 'AI Assistant' : 
-                             message.type === 'success' ? 'Success' :
-                             message.type === 'error' ? 'Error' : 'System'}
-                          </div>
-                          <div className="text-sm text-foreground whitespace-pre-wrap">
-                            {message.content}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    {index < messages.length - 1 && <Separator className="my-2" />}
-                  </div>
-                ))}
-                
-                {/* Current AI transcript (while speaking) */}
-                {isSpeaking && transcript && (
-                  <div className="bg-secondary/10 border-secondary/20 mr-8 p-3 rounded-lg border">
-                    <div className="flex items-start gap-2">
-                      <Bot className="w-4 h-4" />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium mb-1 flex items-center gap-2">
-                          AI Assistant
-                          <Badge variant="secondary" className="gap-1">
-                            <Volume2 className="w-3 h-3" />
-                            Speaking
-                          </Badge>
-                        </div>
-                        <div className="text-sm text-foreground">
-                          {transcript}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                <div ref={messagesEndRef} />
+            <div className="flex items-center justify-center h-32 text-muted-foreground">
+              <div className="text-center">
+                <Mic className="w-8 h-8 mx-auto mb-2" />
+                <p>Listening... Start speaking to begin</p>
               </div>
-            </ScrollArea>
+            </div>
           </CardContent>
         </Card>
       )}
