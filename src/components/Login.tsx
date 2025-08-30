@@ -25,18 +25,20 @@ export function Login({ onLogin }: LoginProps) {
     e.preventDefault();
     setIsLoading(true);
     setError("");
+    
     try {
-      await signIn(email, password); // Using the new signIn from AuthContext
+      await signIn(email, password);
       toast({
         title: "Login Successful",
         description: "Welcome to Activaccer!",
       });
       onLogin();
     } catch (err) {
-      setError("An unexpected error occurred");
+      const errorMessage = err instanceof Error ? err.message : "Login failed. Please check your credentials.";
+      setError(errorMessage);
       toast({
-        title: "Error",
-        description: "An unexpected error occurred",
+        title: "Login Failed",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -118,7 +120,7 @@ export function Login({ onLogin }: LoginProps) {
           </form>
           <div className="mt-6 pt-4 border-t border-border">
             <p className="text-sm text-muted-foreground text-center">
-              Demo credentials: admin@company.com / admin@company.com
+              Valid credentials: admin@company.com / admin@company.com
             </p>
           </div>
         </CardContent>
