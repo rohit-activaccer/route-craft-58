@@ -17,7 +17,10 @@ const Index = () => {
   const [currentPage, setCurrentPage] = useState("dashboard");
   const { user, loading } = useAuth();
 
+  console.log('Index: Current auth state - user:', user, 'loading:', loading);
+
   if (loading) {
+    console.log('Index: Showing loading state');
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -29,8 +32,11 @@ const Index = () => {
   }
 
   if (!user) {
+    console.log('Index: No user found, showing login page');
     return <Login onLogin={() => {}} />;
   }
+
+  console.log('Index: User authenticated, showing dashboard');
 
   const renderPage = () => {
     switch (currentPage) {

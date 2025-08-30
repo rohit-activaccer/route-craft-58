@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 interface User {
-  id: string;
+  id: number;
   email: string;
-  name?: string;
+  first_name?: string;
+  last_name?: string;
+  role?: string;
 }
 
 interface AuthContextType {
@@ -20,32 +22,70 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // For development, create a default user
-    const defaultUser: User = {
-      id: '1',
-      email: 'admin@routecraft.com',
-      name: 'Administrator'
-    };
+    console.log('AuthContext: Initializing authentication...');
+    // Check for existing session in localStorage
+    const savedUser = localStorage.getItem('user');
+    const savedToken = localStorage.getItem('access_token');
     
-    // Simulate loading delay
-    setTimeout(() => {
-      setUser(defaultUser);
-      setLoading(false);
-    }, 1000);
+    if (savedUser && savedToken) {
+      try {
+        const parsedUser = JSON.parse(savedUser);
+        console.log('AuthContext: Found saved user:', parsedUser);
+        setUser(parsedUser);
+      } catch (error) {
+        console.error('AuthContext: Error parsing saved user:', error);
+        localStorage.removeItem('user');
+        localStorage.removeItem('access_token');
+      }
+    } else {
+      console.log('AuthContext: No saved user found, user will need to login');
+    }
+    setLoading(false);
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    // For development, accept any credentials
-    const user: User = {
-      id: '1',
-      email: email,
-      name: 'Administrator'
-    };
-    setUser(user);
+    console.log('AuthContext: Signing in with email:', email);
+    
+    try {
+      // Create form data for the login request
+      const formData = new URLSearchParams();
+      formData.append('username', email);
+      formData.append('password', password);
+
+      const response = await fetch('http://localhost:8000/api/v1/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Login failed');
+      }
+
+      const data = await response.json();
+      
+      // Save user and token to localStorage
+      localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('access_token', data.access_token);
+      
+      setUser(data.user);
+      console.log('AuthContext: User signed in successfully:', data.user);
+    } catch (error) {
+      console.error('AuthContext: Login error:', error);
+      throw error;
+    }
   };
 
   const signOut = async () => {
+    console.log('AuthContext: Signing out user');
     setUser(null);
+    // Remove user and token from localStorage
+    localStorage.removeItem('user');
+    localStorage.removeItem('access_token');
+    console.log('AuthContext: User signed out successfully');
   };
 
   const value = {
