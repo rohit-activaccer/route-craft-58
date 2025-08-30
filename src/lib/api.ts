@@ -1,4 +1,7 @@
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+//const API_BASE_URL = 'http://localhost:8000/api/v1';
+const API_BASE_URL = '/api/v1';
+//const API_BASE_URL = "https://procure.activaccer.ai/api/v1";
+//const API_BASE_URL = "http://34.131.14.55:8000/api/v1";
 
 export interface DashboardOverview {
   users: {
