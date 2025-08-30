@@ -1,7 +1,16 @@
-const API_BASE_URL = 'http://localhost:8000/api/v1';
-//const API_BASE_URL = '/api/v1';
-//const API_BASE_URL = "https://procure.activaccer.ai/api/v1";
-//const API_BASE_URL = "http://34.131.14.55:8000/api/v1";
+// Get API base URL from environment or use localhost for development
+const getApiBaseUrl = () => {
+  // Check if we're in production (deployed environment)
+  if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    // Production environment - use the production API
+    return 'https://procure.activaccer.ai/api/v1';
+  } else {
+    // Development environment - use localhost
+    return 'http://localhost:8000/api/v1';
+  }
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 export interface DashboardOverview {
   users: {
